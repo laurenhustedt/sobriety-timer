@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobriety Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #fdf6ec 0%, #fde8d8 50%, #fce4e4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 8px 40px rgba(200, 120, 80, 0.12);
+      text-align: center;
+    }
+
+    .flame {
+      font-size: 3rem;
+      margin-bottom: 8px;
+      animation: flicker 2.5s ease-in-out infinite;
+    }
+
+    @keyframes flicker {
+      0%, 100% { transform: scale(1) rotate(-2deg); }
+      50%       { transform: scale(1.08) rotate(2deg); }
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #7c3a1e;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #b07050;
+      margin-bottom: 36px;
+    }
+
+    /* --- Setup screen --- */
+    #setup label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #7c3a1e;
+      text-align: left;
+      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    #setup input[type="datetime-local"] {
+      width: 100%;
+      padding: 13px 16px;
+      font-size: 1rem;
+      border: 2px solid #f0d0b8;
+      border-radius: 12px;
+      outline: none;
+      color: #3b1f0e;
+      background: #fff;
+      margin-bottom: 20px;
+      transition: border-color 0.15s;
+    }
+
+    #setup input[type="datetime-local"]:focus {
+      border-color: #e07040;
+    }
+
+    #setup button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #e07040, #d95f30);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.2px;
+    }
+
+    #setup button:hover   { opacity: 0.9; }
+    #setup button:active  { transform: scale(0.98); }
+
+    /* --- Tracker screen --- */
+    #tracker { display: none; }
+
+    .since {
+      font-size: 0.82rem;
+      color: #b07050;
+      margin-bottom: 28px;
+    }
+
+    .since strong { color: #7c3a1e; }
+
+    .counters {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .counter {
+      background: linear-gradient(160deg, #fff5ee, #ffe8d6);
+      border-radius: 16px;
+      padding: 18px 8px;
+      box-shadow: 0 2px 8px rgba(200,100,50,0.08);
+    }
+
+    .counter .value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #c0502a;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -1px;
+    }
+
+    .counter .label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #b07050;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .milestone {
+      background: linear-gradient(135deg, #fff3e0, #ffe0cc);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      border-left: 4px solid #e07040;
+    }
+
+    .milestone .label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #b07050;
+      margin-bottom: 4px;
+    }
+
+    .milestone .next {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #7c3a1e;
+    }
+
+    .milestone .progress-bar {
+      margin-top: 10px;
+      height: 6px;
+      background: #f0d0b8;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .milestone .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e07040, #d95f30);
+      border-radius: 99px;
+      transition: width 1s linear;
+    }
+
+    .message {
+      font-size: 1rem;
+      color: #7c3a1e;
+      font-style: italic;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      min-height: 3.2rem;
+    }
+
+    .reset-btn {
+      background: none;
+      border: 2px solid #f0d0b8;
+      color: #b07050;
+      padding: 9px 20px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .reset-btn:hover {
+      border-color: #e07040;
+      color: #7c3a1e;
+    }
+
+    @media (max-width: 380px) {
+      .card { padding: 36px 24px; }
+      .counter .value { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="flame">🔥</div>
+  <h1>Sobriety Tracker</h1>
+  <p class="subtitle">Every second counts.</p>
+
+  <!-- Setup -->
+  <div id="setup">
+    <label for="start-date">When did your journey begin?</label>
+    <input type="datetime-local" id="start-date">
+    <button id="start-btn">Start Tracking</button>
+  </div>
+
+  <!-- Tracker -->
+  <div id="tracker">
+    <p class="since">Sober since <strong id="since-label"></strong></p>
+
+    <div class="counters">
+      <div class="counter">
+        <div class="value" id="days">0</div>
+        <div class="label">Days</div>
+      </div>
+      <div class="counter">
+        <div class="value" id="hours">00</div>
+        <div class="label">Hours</div>
+      </div>
+      <div class="counter">
+        <div class="value" id="minutes">00</div>
+        <div class="label">Mins</div>
+      </div>
+      <div class="counter">
+        <div class="value" id="seconds">00</div>
+        <div class="label">Secs</div>
+      </div>
+    </div>
+
+    <div class="milestone">
+      <div class="label">Next milestone</div>
+      <div class="next" id="milestone-label"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="milestone-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <p class="message" id="message"></p>
+
+    <button class="reset-btn" id="reset-btn">Change start date</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'sobriety_start';
+
+  const messages = [
+    "You're doing something incredibly brave. Keep going.",
+    "Every moment sober is a victory worth celebrating.",
+    "Progress isn't always loud — sometimes it's just one more day.",
+    "You are stronger than you know.",
+    "The hardest part was deciding to start. You've already done that.",
+    "One day at a time. You've got this.",
+    "Your future self is proud of you right now.",
+    "Clarity is a superpower, and you're building it every day.",
+    "Each second is a choice you made for yourself. That matters.",
+    "You are not alone in this. Keep going.",
+  ];
+
+  const milestones = [1, 3, 7, 14, 30, 60, 90, 180, 365, 500, 730, 1000];
+
+  let startDate = null;
+  let interval  = null;
+  let msgIndex  = 0;
+
+  const setupEl    = document.getElementById('setup');
+  const trackerEl  = document.getElementById('tracker');
+  const startInput = document.getElementById('start-date');
+  const startBtn   = document.getElementById('start-btn');
+  const sinceLabel = document.getElementById('since-label');
+  const daysEl     = document.getElementById('days');
+  const hoursEl    = document.getElementById('hours');
+  const minsEl     = document.getElementById('minutes');
+  const secsEl     = document.getElementById('seconds');
+  const msgEl      = document.getElementById('message');
+  const resetBtn   = document.getElementById('reset-btn');
+  const mileLabel  = document.getElementById('milestone-label');
+  const mileFill   = document.getElementById('milestone-fill');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function getNextMilestone(days) {
+    const next = milestones.find(m => m > days);
+    return next ?? milestones[milestones.length - 1] * 2;
+  }
+
+  function getPrevMilestone(days) {
+    const prev = [...milestones].reverse().find(m => m <= days);
+    return prev ?? 0;
+  }
+
+  function tick() {
+    const now    = Date.now();
+    const diff   = Math.max(0, now - startDate);
+    const totalSecs = Math.floor(diff / 1000);
+
+    const days  = Math.floor(totalSecs / 86400);
+    const hours = Math.floor((totalSecs % 86400) / 3600);
+    const mins  = Math.floor((totalSecs % 3600) / 60);
+    const secs  = totalSecs % 60;
+
+    daysEl.textContent  = days;
+    hoursEl.textContent = pad(hours);
+    minsEl.textContent  = pad(mins);
+    secsEl.textContent  = pad(secs);
+
+    const next = getNextMilestone(days);
+    const prev = getPrevMilestone(days);
+    const progress = prev === next ? 100 : ((days - prev) / (next - prev)) * 100;
+    const daysLeft = next - days;
+
+    mileLabel.textContent = daysLeft === 0
+      ? `🎉 ${next}-day milestone reached!`
+      : `${next} days — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} to go`;
+    mileFill.style.width = Math.min(100, progress) + '%';
+  }
+
+  function showMessage() {
+    msgEl.textContent = '"' + messages[msgIndex % messages.length] + '"';
+    msgIndex++;
+  }
+
+  function startTracking(date) {
+    startDate = date;
+    localStorage.setItem(STORAGE_KEY, date);
+
+    const d = new Date(date);
+    sinceLabel.textContent = d.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    setupEl.style.display   = 'none';
+    trackerEl.style.display = 'block';
+
+    tick();
+    showMessage();
+
+    clearInterval(interval);
+    interval = setInterval(tick, 1000);
+    setInterval(showMessage, 15000);
+  }
+
+  startBtn.addEventListener('click', () => {
+    const val = startInput.value;
+    if (!val) { startInput.focus(); return; }
+    const ts = new Date(val).getTime();
+    if (isNaN(ts) || ts > Date.now()) {
+      alert('Please enter a valid date and time in the past.');
+      return;
+    }
+    startTracking(ts);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY);
+    clearInterval(interval);
+    startDate = null;
+    trackerEl.style.display = 'none';
+    setupEl.style.display   = 'block';
+    startInput.value = '';
+  });
+
+  // Default input to now
+  const now = new Date();
+  now.setSeconds(0, 0);
+  startInput.value = now.toISOString().slice(0, 16);
+
+  // Restore saved date
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) startTracking(Number(saved));
+</script>
+</body>
+</html>
